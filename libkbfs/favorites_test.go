@@ -47,6 +47,8 @@ func TestFavoritesAddTwice(t *testing.T) {
 	config.mockKbpki.EXPECT().FavoriteList(gomock.Any()).Return(nil, nil)
 	config.mockKbpki.EXPECT().FavoriteAdd(gomock.Any(), fav1.ToKBFolder()).
 		Return(nil)
+	config.mockKbs.EXPECT().EncryptFavorites(gomock.Any(),
+		gomock.Any()).Return(nil, nil)
 	if err := f.Add(ctx, fav1); err != nil {
 		t.Fatalf("Couldn't add favorite: %v", err)
 	}
