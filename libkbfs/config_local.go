@@ -107,6 +107,7 @@ type ConfigLocal struct {
 	kbfsService      *KBFSService
 	kbCtx            Context
 	rootNodeWrappers []func(Node) Node
+	tlfClearCancels  map[tlf.ID]context.CancelFunc
 
 	maxNameBytes           uint32
 	rekeyQueue             RekeyQueue
@@ -415,11 +416,12 @@ func NewConfigLocal(mode InitMode,
 	storageRoot string, diskCacheMode DiskCacheMode,
 	kbCtx Context) *ConfigLocal {
 	config := &ConfigLocal{
-		loggerFn:      loggerFn,
-		storageRoot:   storageRoot,
-		mode:          mode,
-		diskCacheMode: diskCacheMode,
-		kbCtx:         kbCtx,
+		loggerFn:        loggerFn,
+		storageRoot:     storageRoot,
+		mode:            mode,
+		diskCacheMode:   diskCacheMode,
+		kbCtx:           kbCtx,
+		tlfClearCancels: make(map[tlf.ID]context.CancelFunc),
 	}
 	if diskCacheMode == DiskCacheModeLocal {
 		config.loadSyncedTlfsLocked()
@@ -1236,6 +1238,13 @@ func (c *ConfigLocal) Shutdown(ctx context.Context) error {
 		// Aggregate errors
 		return errors.Errorf("Multiple errors on shutdown: %+v", errorList)
 	}
+
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	for _, cancel := range c.tlfClearCancels {
+		cancel()
+	}
+
 	return nil
 }
 
@@ -1516,9 +1525,24 @@ func (c *ConfigLocal) SetTlfSyncState(tlfID tlf.ID, isSynced bool) error {
 			return err
 		}
 		if isSynced {
+			if cancel, ok := c.tlfClearCancels[tlfID]; ok {
+				cancel()
+			}
 			err = ldb.Put(tlfBytes, nil, nil)
 		} else {
 			err = ldb.Delete(tlfBytes, nil)
+			// Start a background goroutine deleting all the blocks
+			// from this TLF.
+			ctx, cancel := context.WithCancel(context.Background())
+			if oldCancel, ok := c.tlfClearCancels[tlfID]; ok {
+				oldCancel()
+			}
+			c.tlfClearCancels[tlfID] = cancel
+			diskBlockCache := c.diskBlockCache
+			go func() {
+				defer cancel()
+				diskBlockCache.ClearAllTlfBlocks(ctx, tlfID)
+			}()
 		}
 		if err != nil {
 			return err
