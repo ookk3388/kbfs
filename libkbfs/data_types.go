@@ -861,3 +861,11 @@ func PrefetchStatusFromProtocol(
 	}
 	return s
 }
+
+type syncPathList struct {
+	// Paths is a list of files and directories within a TLF that are
+	// configured to be synced to the local device.
+	Paths []string
+
+	codec.UnknownFieldSetHandler
+}
