@@ -1078,6 +1078,7 @@ type FolderSyncMode int
 const (
 	FolderSyncMode_DISABLED FolderSyncMode = 0
 	FolderSyncMode_ENABLED  FolderSyncMode = 1
+	FolderSyncMode_PARTIAL  FolderSyncMode = 2
 )
 
 func (o FolderSyncMode) DeepCopy() FolderSyncMode { return o }
@@ -1085,11 +1086,13 @@ func (o FolderSyncMode) DeepCopy() FolderSyncMode { return o }
 var FolderSyncModeMap = map[string]FolderSyncMode{
 	"DISABLED": 0,
 	"ENABLED":  1,
+	"PARTIAL":  2,
 }
 
 var FolderSyncModeRevMap = map[FolderSyncMode]string{
 	0: "DISABLED",
 	1: "ENABLED",
+	2: "PARTIAL",
 }
 
 func (e FolderSyncMode) String() string {
