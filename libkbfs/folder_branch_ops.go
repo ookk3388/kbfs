@@ -7413,6 +7413,21 @@ func (fbo *folderBranchOps) Reset(
 	return nil
 }
 
+// SetPartialSyncConfig implements the KBFSOps interface for folderBranchOps.
+func (fbo *folderBranchOps) SetPartialSyncConfig(
+	ctx context.Context, tlfID tlf.ID, pathsToAdd,
+	pathsToRemove []string) error {
+	// Take the MD lock to make sure there are no races.
+	lState := makeFBOLockState()
+
+	timeTrackerDone := fs.longOperationDebugDumper.Begin(ctx)
+	defer timeTrackerDone()
+
+	ops := fs.getOps(ctx,
+		FolderBranch{Tlf: id, Branch: MasterBranch}, FavoritesOpNoChange)
+	return ops.SetPartialSyncConfig(ctx, id, pathsToAdd, pathsToRemove)
+}
+
 // InvalidateNodeAndChildren implements the KBFSOps interface for
 // folderBranchOps.
 func (fbo *folderBranchOps) InvalidateNodeAndChildren(
