@@ -869,3 +869,14 @@ type syncPathList struct {
 
 	codec.UnknownFieldSetHandler
 }
+
+func (spl syncPathList) makeBlock(ctx context.Context, codec Codec) (
+	Block, error) {
+	buf, err := codec.Encode(spl)
+	if err != nil {
+		return nil, err
+	}
+	b := NewFileBlock().(*FileBlock)
+	b.Contents = buf
+	return b, nil
+}

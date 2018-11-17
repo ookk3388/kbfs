@@ -533,6 +533,12 @@ type KBFSOps interface {
 	// called after explicit user confirmation.  After the call,
 	// `handle` has the new TLF ID.
 	Reset(ctx context.Context, handle *TlfHandle) error
+	// SetPartialSyncConfig adds and/or removes path for partial
+	// syncing.  It returns an error if the TLF is already set for
+	// full syncing.
+	SetPartialSyncConfig(
+		ctx context.Context, tlfID tlf.ID, pathsToAdd,
+		pathsToRemove []string) error
 }
 
 type merkleRootGetter interface {

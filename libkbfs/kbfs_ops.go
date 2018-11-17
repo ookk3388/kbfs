@@ -1279,6 +1279,18 @@ func (fs *KBFSOpsStandard) Reset(
 	return fs.resetTlfID(ctx, handle)
 }
 
+// SetPartialSyncConfig implements the KBFSOps interface for KBFSOpsStandard.
+func (fs *KBFSOpsStandard) SetPartialSyncConfig(
+	ctx context.Context, tlfID tlf.ID, pathsToAdd,
+	pathsToRemove []string) error {
+	timeTrackerDone := fs.longOperationDebugDumper.Begin(ctx)
+	defer timeTrackerDone()
+
+	ops := fs.getOps(ctx,
+		FolderBranch{Tlf: id, Branch: MasterBranch}, FavoritesOpNoChange)
+	return ops.SetPartialSyncConfig(ctx, id, pathsToAdd, pathsToRemove)
+}
+
 func (fs *KBFSOpsStandard) changeHandle(ctx context.Context,
 	oldFav Favorite, newHandle *TlfHandle) {
 	fs.opsLock.Lock()
