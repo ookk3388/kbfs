@@ -208,7 +208,7 @@ func DefaultInitParams(ctx Context) InitParams {
 		DiskCacheMode:                  DiskCacheModeLocal,
 		DiskBlockCacheFraction:         0.10,
 		SyncBlockCacheFraction:         1.00,
-		Mode: InitDefaultString,
+		Mode:                           InitDefaultString,
 	}
 }
 
@@ -756,6 +756,20 @@ func doInit(
 		defer config.Reporter().Notify(ctx, notification)
 	} else {
 		log.CDebugf(ctx, "Disk MD cache enabled")
+	}
+
+	err = config.MakeDiskBlockMetadataStoreIfNotExists()
+	if err != nil {
+		log.CWarningf(ctx,
+			"Could not initialize block metadata store: %+v", err)
+		notification := &keybase1.FSNotification{
+			StatusCode:       keybase1.FSStatusCode_ERROR,
+			NotificationType: keybase1.FSNotificationType_INITIALIZED,
+			ErrorType:        keybase1.FSErrorType_DISK_CACHE_ERROR_LOG_SEND,
+		}
+		defer config.Reporter().Notify(ctx, notification)
+	} else {
+		log.CDebugf(ctx, "Disk block metadata store cache enabled")
 	}
 
 	if config.Mode().KBFSServiceEnabled() {
